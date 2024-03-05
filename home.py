@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import altair as alt
-
+import time
 ##################### STREAMLIT IFC-JS COMPONENT MAGIC ######################
 from pathlib import Path                                                    #
 from re import L                                                            #
@@ -139,6 +139,12 @@ def format_number(number):
 
 #------------------------------------------------------------------------------------------------------------------
 
+def callback_aimodel_upload():
+    if session["aimodel_file"]:
+        session["aimodel"] = "temp"
+        print(session["aimodel"])
+
+
 def callback_upload():
     if session["uploaded_file"]:
         session["file_name"] = session["uploaded_file"].name
@@ -167,7 +173,7 @@ def callback_upload():
             session["total_window_count"] = calculate_window_quantities()[0]
             session["total_window_perimeter"] = calculate_window_quantities()[1]
             session["total_window_area"] = calculate_window_quantities()[2]
-            session["total_cost"] = session["total_slab_area"]*1500000
+            session["total_cost"] = format_number(session["total_slab_area"]*1500000)
 
 
 def get_project_name():
@@ -180,7 +186,10 @@ def draw_3d_viewer():
     def get_current_ifc_file():
         return session.array_buffer
     session.ifc_js_response = ifc_js_viewer(get_current_ifc_file())
-    st.sidebar.success("Visualiser loaded")
+    # st.sidebar.success("IFC파일 로드 성공")
+#------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------
 
 def main():
          
@@ -192,55 +201,111 @@ def main():
     )
 
 
-    
+
     ## Add File uploader to Side Bar Navigation
-    st.sidebar.header('IFC 로드')
-    st.sidebar.file_uploader("파일 선택", type=['ifc'], key="uploaded_file", on_change=callback_upload,)
+    st.sidebar.header('프로젝트 로드(IFC)')
+    st.sidebar.file_uploader('IFC 로드', type=['ifc'], key="uploaded_file", on_change=callback_upload,label_visibility='hidden')
+    
     
     if "is_file_loaded" in session and session["is_file_loaded"]:
-        
+        st.sidebar.markdown("---")
+        st.sidebar.header('AI 모델 선택')
+        ai_model = st.sidebar.selectbox(label='모델선택',
+        options=list(['AIBIM_MODEL_V01','AIBIM_MODEL_V02','사용자 선택']),
+        )
+        if ai_model=='사용자 선택':
+            st.sidebar.file_uploader('AI 모델 선택 또는 로드', type=['ifc'], key="aimodel_file", on_change=callback_aimodel_upload,label_visibility='hidden')
+            st.sidebar.markdown("---")
+        elif ai_model == 'AIBIM_MODEL_V01':
+            st.sidebar.write('공사비예측 영향요인')
+            #벽 수량
+            total_wall_area = session["total_wall_area"]
+            total_wall_length= session["total_wall_length"]
+            total_slab_area = session["total_slab_area"]
+            total_slab_perimeter = session["total_slab_perimeter"]
+
+            dimensions_df = pd.DataFrame({
+                '영향요인': ['벽 면적 합계', '벽 길이 합계','바닥 면적 합계' ],
+                '값': [f"{total_wall_area}㎡", f"{total_wall_length}m", f"{total_slab_area}m"]
+            })
+            st.sidebar.dataframe(dimensions_df,  hide_index = True)
+        elif ai_model == 'AIBIM_MODEL_V02':
+            st.sidebar.write('공사비예측 영향요인')
+            #벽 수량
+            total_wall_area = session["total_wall_area"]
+            total_wall_length= session["total_wall_length"]
+            total_slab_area = session["total_slab_area"]
+            total_slab_perimeter = session["total_slab_perimeter"]
+            total_window_area = session["total_window_area"]
+
+            dimensions_df = pd.DataFrame({
+                '영향요인': ['벽 면적 합계', '창문 면적 합계' ],
+                '값': [f"{total_wall_area}㎡", f"{total_window_area}m"]
+            })
+            st.sidebar.dataframe(dimensions_df,  hide_index = True)
+
+
         ex_finish_dict = {
             "일반마감":1,
             "석재마감": 1.2,
             "판넬마감":1.3,
         }
-
-
         
-     
+        st.sidebar.markdown("---")
+        st.sidebar.header('옵션')
+        fin_type = st.sidebar.selectbox(
+            placeholder="옵션을 선택하세요.",
+            label="외벽마감선택",
+            options=list(ex_finish_dict.keys())
+        )
         
-        st.markdown("---")
-        with st.form(key="form",):
-            col1, col2 = st.columns(2)
-            with col1:
-                
-                fin_type = st.selectbox(
-                    label="외벽마감선택",
-                    options=list(ex_finish_dict.keys()),
-                )
-                
-            with col2:
-                print(session["total_cost"])
-                total_cost = format_number(session["total_cost"]*ex_finish_dict[fin_type])
-                print(total_cost)
-                print(fin_type)
+        st.sidebar.markdown("---")
+        st.sidebar.header('공사비 예측')
 
-                st.markdown(f"##### 총 공사비 : {total_cost}원")
-            submit = st.form_submit_button(label="Submit")
-            
-            
-                
+
+        btn_cost = st.sidebar.button('공사비 예측하기')
+
+
+
+
+        if btn_cost:
+
+
+            # 프로그레스 바 생성
+            progress_bar = st.sidebar.progress(0)
+
+            # 계산 과정 시뮬레이션: 0%에서 100%까지 5초 동안 진행
+            for i in range(100):
+                # 프로그레스 바 업데이트
+                time.sleep(0.05)  # 0.05초 대기
+                progress_bar.progress(i + 1)
 
             
+            print(session["total_cost"])
+            total_cost = session["total_cost"]*ex_finish_dict[fin_type]
+            print(total_cost)
+            print(fin_type)
+
+            st.sidebar.success(f"##### 총 공사비 : {total_cost}원")
+            with st.sidebar.expander("공종별 공사비 보기"):
+                st.write(f'건축공사비 : {total_cost}원')
+                st.write(f'토목공사비 : {total_cost}원')
+                st.write(f'조경공사비 : {total_cost}원')
+                st.write(f'기계공사비 : {total_cost}원')
+                st.write(f'전기공사비 : {total_cost}원')
+                st.write(f'통신공사비 : {total_cost}원')
+                st.write(f'소방공사비 : {total_cost}원')
+
+    if "is_file_loaded" in session and session["is_file_loaded"]:
 
         col1, col2 = st.columns([2,1])
         with col1:
             draw_3d_viewer()
         with col2:
 
-            tab1, tab2 = st.tabs(["수량 집계","-"])
+            tab1, tab2 = st.tabs(["수량 집계","객체별 데이터"])
             with tab1:
-                tab_wall, tab_slab, tab_window = st.tabs(["벽","바닥","창문"])
+                tab_wall, tab_slab, tab_window, tab_column, tab_stair, tab_space, tab_general = st.tabs(["벽","바닥","창문","기둥","계단","공간","개요"])
                 with tab_wall:
                     #벽 수량
                     print(session["total_wall_area"])
@@ -281,156 +346,180 @@ def main():
                     st.dataframe(dimensions_df,  hide_index = True)
 
             with tab2:
-                st.write('')
+                st.write('객체별 데이터')
 
+        
+        
+        
         st.markdown("""
                     ---
                     ### 학습 데이터 분석
                     """)
+        if btn_cost:
+            tab1_, tab2_,tab3_,tab4_,tab5_,tab6_,tab7_= st.tabs(["[벽 면적 합계 당 ]","[벽 길이 합계]","[바닥 면적 합계]","[바닥 둘레 합계]","[창문 개수]","[창문 둘레 합계]","[창문 면적 합계]"])
+            with tab1_:
 
-        tab1_, tab2_,tab3_,tab4_,tab5_,tab6_,tab7_= st.tabs(["[벽 면적 합계]","[벽 길이 합계]","[바닥 면적 합계]","[바닥 둘레 합계]","[창문 개수]","[창문 둘레 합계]","[창문 면적 합계]"])
-        with tab1_:
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
 
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
                 )
-            ).interactive()  # 상호작용 가능하게 만들기
-            st.altair_chart(chart, use_container_width=True)
-        with tab2_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
-
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
                 )
-            ).interactive()  # 상호작용 가능하게 만들기     
-            st.altair_chart(chart, use_container_width=True)
-        with tab3_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
-
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
                 )
-            ).interactive()  # 상호작용 가능하게 만들기
-            st.altair_chart(chart, use_container_width=True)   
-        with tab4_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
 
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
-                )
-            ).interactive()  # 상호작용 가능하게 만들기   
-            st.altair_chart(chart, use_container_width=True)
-        with tab5_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
 
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
-                )
-            ).interactive()  # 상호작용 가능하게 만들기   
-            st.altair_chart(chart, use_container_width=True)
-        with tab6_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
+            with tab2_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
 
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
-                )
-            ).interactive()  # 상호작용 가능하게 만들기   
-            st.altair_chart(chart, use_container_width=True)
-        with tab7_:
-            data = pd.DataFrame({
-                'x': np.random.randn(100),
-                'y': np.random.randn(100)
-            })
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기     
+                st.altair_chart(chart, use_container_width=True)
+            with tab3_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
 
-            # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-            data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
 
-            # 산점도 그리기
-            chart = alt.Chart(data).mark_circle(size=60).encode(
-                x='x',
-                y='y',
-                color=alt.condition(
-                    alt.datum.highlight,  # 조건
-                    alt.value('red'),     # 조건이 참일 때 색상
-                    alt.value('blue')     # 조건이 거짓일 때 색상
-                )
-            ).interactive()  # 상호작용 가능하게 만들기   
-            st.altair_chart(chart, use_container_width=True)
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기
+                st.altair_chart(chart, use_container_width=True)   
+            with tab4_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
 
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기   
+                st.altair_chart(chart, use_container_width=True)
+            with tab5_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
+
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기   
+                st.altair_chart(chart, use_container_width=True)
+            with tab6_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
+
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기   
+                st.altair_chart(chart, use_container_width=True)
+            with tab7_:
+                data = pd.DataFrame({
+                    'x': np.random.randn(100),
+                    'y': np.random.randn(100)
+                })
+
+                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
+                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+
+                # 산점도 그리기
+                chart = alt.Chart(data).mark_circle(size=60).encode(
+                    x='x',
+                    y='y',
+                    color=alt.condition(
+                        alt.datum.highlight,  # 조건
+                        alt.value('red'),     # 조건이 참일 때 색상
+                        alt.value('blue')     # 조건이 거짓일 때 색상
+                    )
+                ).interactive()  # 상호작용 가능하게 만들기   
+                st.altair_chart(chart, use_container_width=True)
+        else :
+            st.markdown(
+                """
+                ---
+                #### 👈 공사비를 예측하시면 학습데이터를 분석할 수 있습니다.
+                ---
+                """
+            )
 
 
 
