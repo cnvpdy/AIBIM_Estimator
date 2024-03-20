@@ -244,21 +244,21 @@ def main():
             })
             st.sidebar.dataframe(dimensions_df,  hide_index = True)
 
-
-        ex_finish_dict = {
+        session['ex_finish_dict'] ={
             "일반마감":1,
             "석재마감": 1.2,
             "판넬마감":1.3,
         }
+        ex_finish_dict = session['ex_finish_dict']
         
         st.sidebar.markdown("---")
         st.sidebar.header('옵션')
-        fin_type = st.sidebar.selectbox(
+        session['fin_type'] = st.sidebar.selectbox(
             placeholder="옵션을 선택하세요.",
             label="외벽마감선택",
             options=list(ex_finish_dict.keys())
         )
-        
+        fin_type = session['fin_type']
         st.sidebar.markdown("---")
         st.sidebar.header('공사비 예측')
 
@@ -282,7 +282,7 @@ def main():
 
             
             print(session["total_cost"])
-            total_cost = session["total_cost"]*ex_finish_dict[fin_type]
+            total_cost = session["total_cost"]*session['ex_finish_dict'][session['fin_type']]
             print(total_cost)
             print(fin_type)
 
