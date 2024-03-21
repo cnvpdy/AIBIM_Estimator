@@ -219,10 +219,12 @@ def main():
         elif ai_model == 'AIBIM_MODEL_V01':
             st.sidebar.write('공사비예측 영향요인')
             #벽 수량
-            total_wall_area = session["total_wall_area"]
-            total_wall_length= session["total_wall_length"]
-            total_slab_area = session["total_slab_area"]
-            total_slab_perimeter = session["total_slab_perimeter"]
+            total_wall_area = "{:,.2f}".format(round(session["total_wall_area"], 2))
+            total_wall_length = "{:,.2f}".format(round(session["total_wall_length"], 2))
+            total_slab_area = "{:,.2f}".format(round(session["total_slab_area"], 2))
+            total_slab_perimeter = "{:,.2f}".format(round(session["total_slab_perimeter"], 2))
+
+
 
             dimensions_df = pd.DataFrame({
                 '영향요인': ['벽 면적 합계', '벽 길이 합계','바닥 면적 합계' ],
@@ -232,12 +234,11 @@ def main():
         elif ai_model == 'AIBIM_MODEL_V02':
             st.sidebar.write('공사비예측 영향요인')
             #벽 수량
-            total_wall_area = session["total_wall_area"]
-            total_wall_length= session["total_wall_length"]
-            total_slab_area = session["total_slab_area"]
-            total_slab_perimeter = session["total_slab_perimeter"]
-            total_window_area = session["total_window_area"]
-
+            total_wall_area = "{:,.2f}".format(round(session["total_wall_area"], 2))
+            total_wall_length = "{:,.2f}".format(round(session["total_wall_length"], 2))
+            total_slab_area = "{:,.2f}".format(round(session["total_slab_area"], 2))
+            total_slab_perimeter = "{:,.2f}".format(round(session["total_slab_perimeter"], 2))
+            total_window_area = "{:,.2f}".format(round(session["total_window_area"], 2))
             dimensions_df = pd.DataFrame({
                 '영향요인': ['벽 면적 합계', '창문 면적 합계' ],
                 '값': [f"{total_wall_area}㎡", f"{total_window_area}m"]
@@ -250,7 +251,19 @@ def main():
             "판넬마감":1.3,
         }
         ex_finish_dict = session['ex_finish_dict']
-        
+        session['start_construction_dict'] ={
+            "2024년":1,
+            "2025년": 1.1,
+            "2026년":1.2,
+            "2027년":1.25,
+            "2028년":1.3,
+            "2029년":1.35,
+            "2030년":1.4,
+
+        }
+        start_construction_dict = session['start_construction_dict']
+
+
         st.sidebar.markdown("---")
         st.sidebar.header('옵션')
         session['fin_type'] = st.sidebar.selectbox(
@@ -259,6 +272,15 @@ def main():
             options=list(ex_finish_dict.keys())
         )
         fin_type = session['fin_type']
+        
+        session['start_construction'] = st.sidebar.selectbox(
+            placeholder="옵션을 선택하세요.",
+            label="착공예정년도",
+            options=list(start_construction_dict.keys())
+        )
+        start_construction = session['start_construction']
+
+
         st.sidebar.markdown("---")
         st.sidebar.header('공사비 예측')
 
@@ -277,24 +299,39 @@ def main():
             # 계산 과정 시뮬레이션: 0%에서 100%까지 5초 동안 진행
             for i in range(100):
                 # 프로그레스 바 업데이트
-                time.sleep(0.05)  # 0.05초 대기
+                time.sleep(0.01)  # 0.05초 대기
                 progress_bar.progress(i + 1)
 
             
             print(session["total_cost"])
-            total_cost = session["total_cost"]*session['ex_finish_dict'][session['fin_type']]
-            print(total_cost)
-            print(fin_type)
+            # 콤마를 제거하고 문자열을 부동소수점 수로 변환
+            total_cost = float(session["total_cost"].replace(",", "")) * session['ex_finish_dict'][session['fin_type']]
+            a_cost = total_cost*0.53
+            c_cost = total_cost*0.095
+            l_cost = total_cost*0.015
+            m_cost = total_cost*0.09
+            e_cost = total_cost*0.13
+            t_cost = total_cost*0.08
+            f_cost = total_cost*0.06
 
-            st.sidebar.success(f"##### 총 공사비 : {total_cost}원")
-            with st.sidebar.expander("공종별 공사비 보기"):
-                st.write(f'건축공사비 : {total_cost}원')
-                st.write(f'토목공사비 : {total_cost}원')
-                st.write(f'조경공사비 : {total_cost}원')
-                st.write(f'기계공사비 : {total_cost}원')
-                st.write(f'전기공사비 : {total_cost}원')
-                st.write(f'통신공사비 : {total_cost}원')
-                st.write(f'소방공사비 : {total_cost}원')
+
+            formatted_cost = "{:,.0f}".format(round(total_cost, -7))
+            st.success(f"##### 총 공사비 : {formatted_cost}원")
+            with st.expander("공종별 공사비 보기"):
+                formatted_cost = "{:,.0f}".format(round(a_cost, -7))
+                st.write(f'건축공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(c_cost, -7))
+                st.write(f'토목공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(l_cost, -7))
+                st.write(f'조경공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(m_cost, -7))
+                st.write(f'기계공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(e_cost, -7))
+                st.write(f'전기공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(t_cost, -7))
+                st.write(f'통신공사비 : {formatted_cost}원')
+                formatted_cost = "{:,.0f}".format(round(f_cost, -7))
+                st.write(f'소방공사비 : {formatted_cost}원')
 
     if "is_file_loaded" in session and session["is_file_loaded"]:
 
@@ -309,8 +346,8 @@ def main():
                 with tab_wall:
                     #벽 수량
                     print(session["total_wall_area"])
-                    total_wall_area = session["total_wall_area"]
-                    total_wall_length= session["total_wall_length"]
+                    total_wall_area = "{:,.2f}".format(round(session["total_wall_area"], 2))
+                    total_wall_length = "{:,.2f}".format(round(session["total_wall_length"], 2))
 
 
                     dimensions_df = pd.DataFrame({
@@ -322,9 +359,9 @@ def main():
                 with tab_slab:
                     #바닥
 
-                    total_slab_area = session["total_slab_area"]
-                    total_slab_perimeter = session["total_slab_perimeter"]
 
+                    total_slab_area = "{:,.2f}".format(round(session["total_slab_area"], 2))
+                    total_slab_perimeter = "{:,.2f}".format(round(session["total_slab_perimeter"], 2))
 
                     dimensions_df = pd.DataFrame({
                         '항목': ['바닥 면적 합계', '바닥 둘레 합계', ],
@@ -335,9 +372,10 @@ def main():
                 with tab_window:
                     #창문
 
-                    total_window_count = session["total_window_count"]
-                    total_window_area = session["total_window_area"]
-                    total_window_perimeter = session["total_window_perimeter"]
+
+                    total_window_count = "{:,.2f}".format(round(session["total_window_count"], 2))
+                    total_window_area = "{:,.2f}".format(round(session["total_window_area"], 2))
+                    total_window_perimeter = "{:,.2f}".format(round(session["total_window_perimeter"], 2))
 
                     dimensions_df = pd.DataFrame({
                         '항목': ['창문 개수', '창문 면적 합계','창문 둘레 합계' ],
