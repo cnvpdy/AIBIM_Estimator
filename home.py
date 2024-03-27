@@ -431,125 +431,198 @@ def main():
 
 
             with tab2_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기     
-                st.altair_chart(chart, use_container_width=True)
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
+
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
             with tab3_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기
-                st.altair_chart(chart, use_container_width=True)   
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
             with tab4_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기   
-                st.altair_chart(chart, use_container_width=True)
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
             with tab5_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기   
-                st.altair_chart(chart, use_container_width=True)
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
             with tab6_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기   
-                st.altair_chart(chart, use_container_width=True)
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
             with tab7_:
-                data = pd.DataFrame({
-                    'x': np.random.randn(100),
-                    'y': np.random.randn(100)
-                })
 
-                # 강조할 조건 추가 (예: x 값이 양수 중 최대값)
-                data['highlight'] = data['x'] == data[data['x'] > 0]['x'].max()
+                # CSV 파일 불러오기
+                file_path = './data/Rawdata_Col.csv'  # 파일 경로를 여러분의 CSV 파일 경로로 수정하세요
+                data = pd.read_csv(file_path, encoding='ISO-8859-1')
 
-                # 산점도 그리기
-                chart = alt.Chart(data).mark_circle(size=60).encode(
-                    x='x',
-                    y='y',
-                    color=alt.condition(
-                        alt.datum.highlight,  # 조건
-                        alt.value('red'),     # 조건이 참일 때 색상
-                        alt.value('blue')     # 조건이 거짓일 때 색상
-                    )
-                ).interactive()  # 상호작용 가능하게 만들기   
-                st.altair_chart(chart, use_container_width=True)
+                # 'total_byarea' 컬럼을 10만 단위로 구간 나누기 및 구간별 평균 계산 (예시로 평균 사용, 필요에 따라 변경 가능)
+                data['total_byarea_bin'] = np.floor(data['total_byarea'] / 100000) * 100000
+                # 이번에는 'total_byarea_bin' 컬럼을 정수로 유지합니다.
+
+                # 구간별 개수 세기 및 데이터 프레임 변환
+                bin_counts = data.groupby('total_byarea_bin').size().reset_index(name='count')
+
+                # 꺾은선 그래프 생성 및 아래 영역 채우기
+                line_chart = alt.Chart(bin_counts).mark_line(color='blue').encode(
+                    x=alt.X('total_byarea_bin:Q', axis=alt.Axis(title='Total by Area Bin (10만 단위)')),  # Q: Quantitative (정량적 데이터)
+                    y=alt.Y('count:Q', axis=alt.Axis(title='Count'))
+                )
+
+                area_chart = alt.Chart(bin_counts).mark_area(opacity=0.3, color='blue').encode(
+                    x='total_byarea_bin:Q',
+                    y='count:Q'
+                )
+
+                # 1,000,000 위치에 수직선 추가
+                vline = alt.Chart(pd.DataFrame({'total_byarea_bin': [1000000]})).mark_rule(color='red').encode(
+                    x='total_byarea_bin:Q',
+                )
+
+                # 꺾은선 그래프, 영역 채우기, 수직선 중첩
+                final_chart = (line_chart + area_chart + vline).interactive()
+                st.altair_chart(final_chart, use_container_width=True)
         else :
             st.markdown(
                 """
